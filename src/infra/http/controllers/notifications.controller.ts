@@ -1,12 +1,12 @@
-import { Body, Controller, Post, Patch, Param, Get } from '@nestjs/common';
+import { Controller, Patch, Param, Get } from '@nestjs/common';
 import { SendNotification } from '@app/use-cases/send-notification';
-import { CreateNotificationBody } from '../dtos/create-notification-body';
 import { NotificationViewModel } from '../view-models/notification-view-model';
 import { CancelNotification } from '@app/use-cases/cancel-notification';
 import { ReadNotification } from '@app/use-cases/read-notification';
 import { UnreadNotification } from '@app/use-cases/unread-notification';
 import { CountRecipientNotification } from '@app/use-cases/count-recipient-notifications';
 import { GetRecipientNotification } from '@app/use-cases/get-recipient-notifications';
+import { MessagePattern, Payload } from '@nestjs/microservices/decorators';
 
 @Controller('notifications')
 export class NotificationsController {
@@ -52,16 +52,14 @@ export class NotificationsController {
     await this.unreadNotification.execute({ notificationId: id });
   }
 
-  @Post()
-  async create(@Body() body: CreateNotificationBody) {
-    const { recipientId, content, category } = body;
-
+  @MessagePattern('notification')
+  async create(@Payload() message) {
+    const { recipientId, content, category } = message;
     const { notification } = await this.sendNotification.execute({
       recipientId,
       category,
       content,
     });
-
     return { notification: NotificationViewModel.toHTTP(notification) };
   }
 }
